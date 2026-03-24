@@ -15,9 +15,8 @@ import os
 warnings.filterwarnings('ignore')
 
 # Import cleaning modules
-# from data_cleaner import StockDataCleaner, quick_clean
-from analyzer.data_cleaner import StockDataCleaner, quick_clean
-from analyzer.file_processor import FileProcessor, interactive_file_selection
+from data_cleaner import StockDataCleaner, quick_clean
+from file_processor import FileProcessor, interactive_file_selection
 
 # Import configuration
 try:
