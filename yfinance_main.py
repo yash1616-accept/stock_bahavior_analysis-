@@ -2,7 +2,6 @@
 ===============================================================================
 RETAIL INVESTOR BEHAVIOUR-AWARE STOCK ANALYSIS SYSTEM
 ===============================================================================
-Author: Data Science Team
 Purpose: Detect emotional trading patterns in retail investors
 - Panic Selling Zones
 - FOMO (Fear of Missing Out) Buying Zones  

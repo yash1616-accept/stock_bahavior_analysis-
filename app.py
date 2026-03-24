@@ -3,7 +3,7 @@
 FLASK BACKEND API
 Connects React UI to Python analysis pipeline
 Run with: python app.py
-API runs at: http://localhost:5000
+
 ===============================================================================
 """
 
@@ -15,6 +15,7 @@ import yfinance as yf
 import os
 import warnings
 warnings.filterwarnings("ignore")
+from sklearn.ensemble import IsolationForest
 
 app = Flask(__name__)
 CORS(app)  # Allow React (port 5173) to call this API
@@ -71,6 +72,27 @@ def detect_behavior(df):
     return df
 
 # ============================================================================
+# HELPER: ML Anomaly Detection (Isolation Forest)
+# ============================================================================
+def detect_ml_anomalies(df):
+    df = df.copy()
+    if len(df) < 10:
+        df["ML_Anomaly"] = False
+        return df
+
+    # Features used to find anomalous pattern
+    features = ["Price_Change_Pct", "Volume_Zscore", "Volatility"]
+    X = df[features].fillna(0)
+
+    # Scikit-Learn Isolation Forest
+    iso_forest = IsolationForest(contamination=0.05, random_state=42)
+    preds = iso_forest.fit_predict(X)
+
+    # -1 indicates an anomaly
+    df["ML_Anomaly"] = (preds == -1)
+    return df
+
+# ============================================================================
 # HELPER: Convert DataFrame to JSON-safe list
 # ============================================================================
 def df_to_records(df):
@@ -81,6 +103,8 @@ def df_to_records(df):
             val = row[col]
             if pd.isna(val):
                 record[col] = None
+            elif isinstance(val, bool) or isinstance(val, np.bool_):
+                record[col] = bool(val)
             elif isinstance(val, (np.integer,)):
                 record[col] = int(val)
             elif isinstance(val, (np.floating,)):
@@ -125,8 +149,10 @@ def analyze():
         # Feature Engineering + Behavior Detection
         df = engineer_features(df)
         df = detect_behavior(df)
+        df = detect_ml_anomalies(df)
 
         # Build summary stats
+        ml_anomalies = int(df["ML_Anomaly"].sum()) if "ML_Anomaly" in df.columns else 0
         behaviors    = df["Behavior"].value_counts().to_dict()
         total        = len(df)
         total_return = round(((df["Close"].iloc[-1] - df["Close"].iloc[0]) / df["Close"].iloc[0]) * 100, 2)
@@ -166,6 +192,7 @@ def analyze():
                 "risk_pct":     risk_pct,
                 "max_price":    max_price,
                 "min_price":    min_price,
+                "ml_anomalies": ml_anomalies,
                 "start_price":  round(float(df["Open"].iloc[0]), 2),
                 "end_price":    round(float(df["Close"].iloc[-1]), 2),
             },
@@ -229,7 +256,9 @@ def analyze_file():
         # Feature Engineering + Behavior Detection
         df = engineer_features(df)
         df = detect_behavior(df)
+        df = detect_ml_anomalies(df)
 
+        ml_anomalies = int(df["ML_Anomaly"].sum()) if "ML_Anomaly" in df.columns else 0
         behaviors    = df["Behavior"].value_counts().to_dict()
         total        = len(df)
         total_return = round(((df["Close"].iloc[-1] - df["Close"].iloc[0]) / df["Close"].iloc[0]) * 100, 2)
@@ -250,6 +279,7 @@ def analyze_file():
                 "risk_pct":       risk_pct,
                 "max_price":      round(float(df["High"].max()), 2),
                 "min_price":      round(float(df["Low"].min()), 2),
+                "ml_anomalies":   ml_anomalies,
                 "start_price":    round(float(df["Open"].iloc[0]), 2),
                 "end_price":      round(float(df["Close"].iloc[-1]), 2),
             },

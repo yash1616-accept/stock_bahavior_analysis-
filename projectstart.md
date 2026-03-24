@@ -3,3 +3,4 @@ venv\Scripts\Activate.ps1
 python app.py
 cd frontend
 npm run dev
+testdata in > analyze>output > test_ticker_complete_analysis.csv

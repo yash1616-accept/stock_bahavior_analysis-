@@ -8,7 +8,7 @@ import {
   TrendingDown, TrendingUp, Activity, AlertCircle,
   Upload, RefreshCw, BarChart2, Home, FileText,
   Info, ChevronDown, Search, Moon, Sun, Download,
-  Wifi, WifiOff, X
+  Wifi, WifiOff, X, Zap
 } from "lucide-react";
 import { analyzeStock, analyzeFile, checkHealth } from "./api";
 
@@ -81,11 +81,12 @@ function OverviewPage({ data, summary, ticker, dark }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard title="Panic Selling" value={behaviors["Panic Selling"] || 0} sub="days detected" icon={TrendingDown} color="#ef4444" dark={dark} />
         <StatCard title="FOMO Buying" value={behaviors["FOMO Buying"] || 0} sub="days detected" icon={TrendingUp} color="#10b981" dark={dark} />
         <StatCard title="Overconfidence" value={behaviors["Overconfidence"] || 0} sub="days detected" icon={Activity} color="#f59e0b" dark={dark} />
         <StatCard title="Risk Level" value={`${summary.risk_pct}%`} sub="abnormal days" icon={AlertCircle} color="#6366f1" dark={dark} />
+        <StatCard title="ML Anomalies" value={summary.ml_anomalies || 0} sub="AI detections" icon={Zap} color="#8b5cf6" dark={dark} />
       </div>
 
       <SectionCard title={`📈 ${ticker} — Price with Behaviour Zones`} dark={dark}>
@@ -252,12 +253,13 @@ function InsightsPage({ data, summary, insights, ticker, period, dark }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: "Total Return", value: `${summary.total_return}%`, color: summary.total_return >= 0 ? "#10b981" : "#ef4444" },
           { label: "Avg Volatility", value: `${summary.avg_volatility}%`, color: "#f97316" },
           { label: "Max Volatility", value: `${summary.max_volatility}%`, color: "#ef4444" },
           { label: "Abnormal Days", value: `${riskPct}%`, color: "#6366f1" },
+          { label: "ML Anomalies", value: summary.ml_anomalies || 0, color: "#8b5cf6" },
         ].map((s, i) => (
           <div key={i} className={`rounded-2xl p-4 shadow text-center ${dark ? "bg-gray-800" : "bg-white"}`}>
             <p className={`text-xs mb-1 ${dark ? "text-gray-400" : "text-gray-500"}`}>{s.label}</p>
@@ -357,10 +359,10 @@ function DataPage({ data, dark }) {
   const paged = filtered.slice(page * PAGE, (page + 1) * PAGE);
   const totalPages = Math.ceil(filtered.length / PAGE);
 
-  const headers = ["Date", "Close", "Change %", "Vol Z", "Volatility", "Behaviour", "Confidence"];
+  const headers = ["Date", "Close", "Change %", "Vol Z", "Volatility", "Behaviour", "Confidence", "ML Anomaly"];
 
   const downloadCSV = () => {
-    const cols = ["Date", "Close", "Price_Change_Pct", "Volume_Zscore", "Volatility", "Behavior", "Confidence_Score"];
+    const cols = ["Date", "Close", "Price_Change_Pct", "Volume_Zscore", "Volatility", "Behavior", "Confidence_Score", "ML_Anomaly"];
     const csv = [cols.join(","), ...data.map(d => cols.map(c => d[c] ?? "").join(","))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -423,6 +425,9 @@ function DataPage({ data, dark }) {
                       </div>
                       <span className={`text-xs ${dark ? "text-gray-400" : "text-gray-500"}`}>{parseFloat(row.Confidence_Score || 0).toFixed(0)}%</span>
                     </div>
+                  </td>
+                  <td className={`px-4 py-2.5 font-medium ${row.ML_Anomaly ? "text-purple-500" : (dark ? "text-gray-500" : "text-gray-400")}`}>
+                    {row.ML_Anomaly ? "🚨 Yes" : "No"}
                   </td>
                 </tr>
               ))}
