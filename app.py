@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 from sklearn.ensemble import IsolationForest
 
 app = Flask(__name__)
-CORS(app)  # Allow React (port 5173) to call this API
+CORS(app) 
 
 # ============================================================================
 # HELPER: Feature Engineering
